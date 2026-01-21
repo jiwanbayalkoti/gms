@@ -20,6 +20,15 @@ Route::middleware(['web'])->get('/', function () {
     $host = request()->getHost();
     $centralDomains = config('tenancy.central_domains', []);
     
+    // Log for debugging (only in non-production)
+    if (config('app.debug')) {
+        \Log::info('Home route accessed', [
+            'host' => $host,
+            'central_domains' => $centralDomains,
+            'is_central' => in_array($host, $centralDomains)
+        ]);
+    }
+    
     // Priority: If on central domain, show welcome page
     if (in_array($host, $centralDomains)) {
         return view('welcome');
@@ -36,9 +45,19 @@ Route::middleware(['web'])->get('/', function () {
         if ($tenant) {
             tenancy()->initialize($tenant);
             return view('tenant.home');
+        } else {
+            // Log if tenant not found
+            if (config('app.debug')) {
+                \Log::warning('Tenant not found for domain', ['domain' => $host]);
+            }
         }
     } catch (\Exception $e) {
-        // If tenancy initialization fails, show welcome as fallback
+        // Log the error for debugging
+        \Log::error('Tenancy initialization failed', [
+            'domain' => $host,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
     }
     
     // Fallback: show welcome page

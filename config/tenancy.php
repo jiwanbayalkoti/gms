@@ -15,10 +15,11 @@ return [
      * The list of domains hosting your central app.
      *
      * Only relevant if you're using the domain or subdomain identification middleware.
+     * Can be configured via CENTRAL_DOMAINS env variable (comma-separated).
      */
-    'central_domains' => [
-        'localhost',
-    ],
+    'central_domains' => array_filter(
+        array_map('trim', explode(',', env('CENTRAL_DOMAINS', 'localhost')))
+    ),
 
     /**
      * Tenancy bootstrappers are executed when tenancy is initialized.
