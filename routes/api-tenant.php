@@ -62,50 +62,110 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user-management', [UserManagementController::class, 'apiIndex'])->name('api.user-management.index');
     
     // Members
-    Route::apiResource('members', MemberController::class);
+    Route::apiResource('members', MemberController::class)->names([
+        'index' => 'api.members.index',
+        'show' => 'api.members.show',
+        'store' => 'api.members.store',
+        'update' => 'api.members.update',
+        'destroy' => 'api.members.destroy',
+    ]);
     Route::post('/members/{member}/status', [MemberController::class, 'apiUpdateStatus'])->name('api.members.status');
     
     // Trainers
-    Route::apiResource('trainers', TrainerController::class);
+    Route::apiResource('trainers', TrainerController::class)->names([
+        'index' => 'api.trainers.index',
+        'show' => 'api.trainers.show',
+        'store' => 'api.trainers.store',
+        'update' => 'api.trainers.update',
+        'destroy' => 'api.trainers.destroy',
+    ]);
     Route::post('/trainers/{trainer}/status', [TrainerController::class, 'apiUpdateStatus'])->name('api.trainers.status');
     
     // Staff
-    Route::apiResource('staff', StaffController::class);
+    Route::apiResource('staff', StaffController::class)->names([
+        'index' => 'api.staff.index',
+        'show' => 'api.staff.show',
+        'store' => 'api.staff.store',
+        'update' => 'api.staff.update',
+        'destroy' => 'api.staff.destroy',
+    ]);
     Route::post('/staff/{staff}/status', [StaffController::class, 'apiUpdateStatus'])->name('api.staff.status');
     
     // Membership Plans
-    Route::apiResource('membership-plans', MembershipPlanController::class);
+    Route::apiResource('membership-plans', MembershipPlanController::class)->names([
+        'index' => 'api.membership-plans.index',
+        'show' => 'api.membership-plans.show',
+        'store' => 'api.membership-plans.store',
+        'update' => 'api.membership-plans.update',
+        'destroy' => 'api.membership-plans.destroy',
+    ]);
     Route::post('/membership-plans/{plan}/status', [MembershipPlanController::class, 'apiUpdateStatus'])->name('api.membership-plans.status');
     
     // Workout Plans
-    Route::apiResource('workout-plans', WorkoutPlanController::class);
+    Route::apiResource('workout-plans', WorkoutPlanController::class)->names([
+        'index' => 'api.workout-plans.index',
+        'show' => 'api.workout-plans.show',
+        'store' => 'api.workout-plans.store',
+        'update' => 'api.workout-plans.update',
+        'destroy' => 'api.workout-plans.destroy',
+    ]);
     Route::get('/workout-plans/{plan}/assign/{member?}', [WorkoutPlanController::class, 'apiShowAssignForm'])->name('api.workout-plans.assign.form');
     Route::post('/workout-plans/{plan}/assign', [WorkoutPlanController::class, 'apiAssign'])->name('api.workout-plans.assign');
     
     // Diet Plans
-    Route::apiResource('diet-plans', DietPlanController::class);
+    Route::apiResource('diet-plans', DietPlanController::class)->names([
+        'index' => 'api.diet-plans.index',
+        'show' => 'api.diet-plans.show',
+        'store' => 'api.diet-plans.store',
+        'update' => 'api.diet-plans.update',
+        'destroy' => 'api.diet-plans.destroy',
+    ]);
     Route::get('/diet-plans/{plan}/assign/{member?}', [DietPlanController::class, 'apiShowAssignForm'])->name('api.diet-plans.assign.form');
     Route::post('/diet-plans/{plan}/assign', [DietPlanController::class, 'apiAssign'])->name('api.diet-plans.assign');
     
     // Classes
-    Route::apiResource('classes', GymClassController::class);
+    Route::apiResource('classes', GymClassController::class)->names([
+        'index' => 'api.classes.index',
+        'show' => 'api.classes.show',
+        'store' => 'api.classes.store',
+        'update' => 'api.classes.update',
+        'destroy' => 'api.classes.destroy',
+    ]);
     Route::post('/classes/{class}/status', [GymClassController::class, 'apiUpdateStatus'])->name('api.classes.status');
     
     // Bookings
-    Route::apiResource('bookings', BookingController::class);
+    Route::apiResource('bookings', BookingController::class)->names([
+        'index' => 'api.bookings.index',
+        'show' => 'api.bookings.show',
+        'store' => 'api.bookings.store',
+        'update' => 'api.bookings.update',
+        'destroy' => 'api.bookings.destroy',
+    ]);
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'apiApprove'])->name('api.bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingController::class, 'apiReject'])->name('api.bookings.reject');
     Route::post('/bookings/{booking}/status', [BookingController::class, 'apiUpdateStatus'])->name('api.bookings.status');
     Route::get('/bookings/member/{member}', [BookingController::class, 'apiMemberBookings'])->name('api.bookings.member');
     
     // Attendances
-    Route::apiResource('attendances', AttendanceController::class);
+    Route::apiResource('attendances', AttendanceController::class)->names([
+        'index' => 'api.attendances.index',
+        'show' => 'api.attendances.show',
+        'store' => 'api.attendances.store',
+        'update' => 'api.attendances.update',
+        'destroy' => 'api.attendances.destroy',
+    ]);
     Route::get('/check-in', [AttendanceController::class, 'apiCheckInForm'])->name('api.attendances.check-in.form');
     Route::post('/check-in', [AttendanceController::class, 'apiCheckIn'])->name('api.attendances.check-in');
     Route::post('/check-out/{attendance}', [AttendanceController::class, 'apiCheckOut'])->name('api.attendances.check-out');
     
     // Payments
-    Route::apiResource('payments', PaymentController::class);
+    Route::apiResource('payments', PaymentController::class)->names([
+        'index' => 'api.payments.index',
+        'show' => 'api.payments.show',
+        'store' => 'api.payments.store',
+        'update' => 'api.payments.update',
+        'destroy' => 'api.payments.destroy',
+    ]);
     Route::get('/payments/{payment}/invoice', [PaymentController::class, 'apiInvoice'])->name('api.payments.invoice');
     Route::get('/payments/member/{member}', [PaymentController::class, 'apiMemberPayments'])->name('api.payments.member');
     Route::post('/payments/process/stripe', [PaymentController::class, 'apiProcessStripePayment'])->name('api.payments.process.stripe');
@@ -121,7 +181,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/reports/members', [ReportController::class, 'apiMembers'])->name('api.reports.members');
     
     // Notifications
-    Route::apiResource('notifications', NotificationController::class);
+    Route::apiResource('notifications', NotificationController::class)->names([
+        'index' => 'api.notifications.index',
+        'show' => 'api.notifications.show',
+        'store' => 'api.notifications.store',
+        'update' => 'api.notifications.update',
+        'destroy' => 'api.notifications.destroy',
+    ]);
     Route::get('/my-notifications', [NotificationController::class, 'apiMyNotifications'])->name('api.notifications.my');
     Route::get('/notifications/urgent/list', [NotificationController::class, 'apiGetUrgentNotifications'])->name('api.notifications.urgent');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'apiMarkAsRead'])->name('api.notifications.read');
@@ -130,17 +196,35 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/notifications/{notification}/unpublish', [NotificationController::class, 'apiUnpublish'])->name('api.notifications.unpublish');
     
     // Events
-    Route::apiResource('events', EventController::class);
+    Route::apiResource('events', EventController::class)->names([
+        'index' => 'api.events.index',
+        'show' => 'api.events.show',
+        'store' => 'api.events.store',
+        'update' => 'api.events.update',
+        'destroy' => 'api.events.destroy',
+    ]);
     Route::post('/events/{event}/response', [EventController::class, 'apiUpdateResponse'])->name('api.events.response');
     Route::post('/events/{event}/publish', [EventController::class, 'apiPublish'])->name('api.events.publish');
     
     // Pause Requests
-    Route::apiResource('pause-requests', PauseRequestController::class);
+    Route::apiResource('pause-requests', PauseRequestController::class)->names([
+        'index' => 'api.pause-requests.index',
+        'show' => 'api.pause-requests.show',
+        'store' => 'api.pause-requests.store',
+        'update' => 'api.pause-requests.update',
+        'destroy' => 'api.pause-requests.destroy',
+    ]);
     Route::post('/pause-requests/{pauseRequest}/approve', [PauseRequestController::class, 'apiApprove'])->name('api.pause-requests.approve');
     Route::post('/pause-requests/{pauseRequest}/reject', [PauseRequestController::class, 'apiReject'])->name('api.pause-requests.reject');
     
     // Salaries
-    Route::apiResource('salaries', SalaryController::class);
+    Route::apiResource('salaries', SalaryController::class)->names([
+        'index' => 'api.salaries.index',
+        'show' => 'api.salaries.show',
+        'store' => 'api.salaries.store',
+        'update' => 'api.salaries.update',
+        'destroy' => 'api.salaries.destroy',
+    ]);
     Route::post('/salaries/{salary}/toggle-status', [SalaryController::class, 'apiToggleStatus'])->name('api.salaries.toggle-status');
     
     // Salary Payments (Payroll)
