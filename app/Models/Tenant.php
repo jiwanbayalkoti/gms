@@ -31,13 +31,4 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         'active' => 'boolean',
         'subscription_ends_at' => 'datetime',
     ];
-
-    protected static function booted()
-    {
-        static::creating(function ($tenant) {
-            if (!$tenant->id) {
-                $tenant->id = $tenant->getKey();
-            }
-        });
-    }
 }

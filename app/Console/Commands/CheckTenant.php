@@ -54,13 +54,14 @@ class CheckTenant extends Command
             }
             
             try {
-                $tenant = Tenant::create([
-                    'id' => $id,
-                    'name' => $name,
-                    'email' => $email ?: null,
-                    'phone' => $phone ?: null,
-                    'active' => true,
-                ]);
+                // Create tenant - set id explicitly as it's the primary key
+                $tenant = new Tenant();
+                $tenant->setAttribute('id', $id);
+                $tenant->name = $name;
+                $tenant->email = $email ?: null;
+                $tenant->phone = $phone ?: null;
+                $tenant->active = true;
+                $tenant->save();
                 
                 $tenant->domains()->create(['domain' => $domain]);
                 
@@ -73,6 +74,7 @@ class CheckTenant extends Command
                 return Command::SUCCESS;
             } catch (\Exception $e) {
                 $this->error('Failed to create tenant: ' . $e->getMessage());
+                $this->error('Stack trace: ' . $e->getTraceAsString());
                 return Command::FAILURE;
             }
         }
