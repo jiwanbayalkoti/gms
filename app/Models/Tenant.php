@@ -26,6 +26,10 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     }
 
     protected $guarded = [];
+    
+    public $incrementing = false;
+    
+    protected $keyType = 'string';
 
     protected $casts = [
         'active' => 'boolean',

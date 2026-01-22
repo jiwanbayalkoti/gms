@@ -54,14 +54,15 @@ class CheckTenant extends Command
             }
             
             try {
-                // Create tenant - set id explicitly as it's the primary key
-                $tenant = new Tenant();
-                $tenant->setAttribute('id', $id);
-                $tenant->name = $name;
-                $tenant->email = $email ?: null;
-                $tenant->phone = $phone ?: null;
-                $tenant->active = true;
-                $tenant->save();
+                // Use the same approach as CreateTenant command
+                // The BaseTenant model handles id specially, so we use create() with id in array
+                $tenant = Tenant::create([
+                    'id' => $id,
+                    'name' => $name,
+                    'email' => $email ?: null,
+                    'phone' => $phone ?: null,
+                    'active' => true,
+                ]);
                 
                 $tenant->domains()->create(['domain' => $domain]);
                 
@@ -75,7 +76,46 @@ class CheckTenant extends Command
             } catch (\Exception $e) {
                 $this->error('Failed to create tenant: ' . $e->getMessage());
                 $this->error('Stack trace: ' . $e->getTraceAsString());
-                return Command::FAILURE;
+                
+                // If create() fails, try alternative approach using DB directly
+                $this->warn('Trying alternative method...');
+                try {
+                    DB::beginTransaction();
+                    
+                    // Insert tenant directly
+                    DB::table('tenants')->insert([
+                        'id' => $id,
+                        'name' => $name,
+                        'email' => $email ?: null,
+                        'phone' => $phone ?: null,
+                        'active' => true,
+                        'data' => json_encode(['id' => $id]),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    
+                    // Create domain
+                    DB::table('domains')->insert([
+                        'domain' => $domain,
+                        'tenant_id' => $id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    
+                    DB::commit();
+                    
+                    $this->info("✓ Tenant created successfully using alternative method!");
+                    $this->info("✓ Domain '{$domain}' assigned to tenant '{$id}'");
+                    $this->newLine();
+                    $this->warn("Don't forget to run migrations:");
+                    $this->line("  php artisan tenants:migrate --tenants={$id}");
+                    
+                    return Command::SUCCESS;
+                } catch (\Exception $e2) {
+                    DB::rollBack();
+                    $this->error('Alternative method also failed: ' . $e2->getMessage());
+                    return Command::FAILURE;
+                }
             }
         }
         
