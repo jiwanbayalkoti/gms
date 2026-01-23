@@ -55,8 +55,18 @@ class PauseRequestController extends BaseController
             $pauseRequests = $this->applyGymFilter($query)->orderBy('created_at', 'desc')->get();
         }
 
-        // If AJAX request, return JSON with table body
-        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'pause_requests' => $pauseRequests
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'html' => view('pause-requests._table-body', compact('pauseRequests'))->render()
@@ -320,8 +330,18 @@ class PauseRequestController extends BaseController
             $this->validateGymAccess($pauseRequest->gym_id);
         }
 
-        // Return JSON for AJAX requests
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'pause_request' => $pauseRequest
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return JSON with HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'pauseRequest' => $pauseRequest,

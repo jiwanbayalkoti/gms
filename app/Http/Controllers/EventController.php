@@ -69,8 +69,18 @@ class EventController extends BaseController
                 ->get();
         }
 
-        // If AJAX request, return JSON with events HTML
-        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'events' => $events
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'html' => view('events._events-list', compact('events'))->render()
@@ -198,8 +208,27 @@ class EventController extends BaseController
             $notSureUsers = $event->attendees()->wherePivot('response', 'Not Sure')->get();
         }
 
-        // Return JSON for AJAX requests
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'event' => $event,
+                    'response' => $response,
+                    'counts' => [
+                        'attending' => $attendingCount,
+                        'not_attending' => $notAttendingCount,
+                        'not_sure' => $notSureCount,
+                    ],
+                    'attending_users' => $attendingUsers,
+                    'not_attending_users' => $notAttendingUsers,
+                    'not_sure_users' => $notSureUsers,
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return JSON with HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'event' => $event,

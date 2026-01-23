@@ -34,8 +34,18 @@ class NotificationController extends BaseController
         
         $notifications = $this->applyGymFilter($query)->latest()->get();
 
-        // If AJAX request, return JSON with table body
-        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'notifications' => $notifications
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'html' => view('notifications._table-body', compact('notifications'))->render()
@@ -405,7 +415,18 @@ class NotificationController extends BaseController
         // Don't mark as read here - let the frontend handle it after modal is shown
         // This allows the user to see the notification before it's marked as read
 
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'notification' => $notification
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return JSON with HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'notification' => [

@@ -76,8 +76,18 @@ class GymClassController extends BaseController
             $trainers = $trainersQuery->get();
         }
 
-        // If AJAX request, return JSON with table body
-        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'classes' => $classes
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'html' => view('classes._table-body', compact('classes'))->render()
@@ -202,8 +212,18 @@ class GymClassController extends BaseController
         // Validate gym access
         $this->validateGymAccess($class->gym_id);
 
-        // Return JSON for AJAX requests
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'class' => $class
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return JSON with HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'class' => $class,

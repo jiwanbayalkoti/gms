@@ -43,8 +43,18 @@ class SalaryController extends BaseController
         }
         $employees = $employeesQuery->get();
 
-        // If AJAX request, return JSON with table body
-        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'salaries' => $salaries
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'html' => view('salaries._table-body', compact('salaries'))->render()
@@ -166,7 +176,18 @@ class SalaryController extends BaseController
         $salary = Salary::with(['employee', 'gym', 'salaryPayments'])->findOrFail($id);
         $this->validateGymAccess($salary->gym_id);
 
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'salary' => $salary
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return JSON with HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'salary' => $salary,

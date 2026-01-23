@@ -169,5 +169,32 @@ abstract class BaseController extends Controller
     {
         return $this->apiError($message, null, 403);
     }
+
+    /**
+     * Check if the request is from API (mobile app) or wants JSON.
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return bool
+     */
+    protected function isApiRequest(Request $request): bool
+    {
+        return $request->is('api/*') || 
+               $request->wantsJson() || 
+               $request->expectsJson() || 
+               $request->header('Accept') === 'application/json' ||
+               $request->header('Content-Type') === 'application/json';
+    }
+
+    /**
+     * Check if the request is a web AJAX request (not API).
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return bool
+     */
+    protected function isWebAjaxRequest(Request $request): bool
+    {
+        return !$this->isApiRequest($request) && 
+               ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest');
+    }
 }
 

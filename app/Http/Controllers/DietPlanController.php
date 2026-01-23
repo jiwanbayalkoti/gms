@@ -52,8 +52,18 @@ class DietPlanController extends BaseController
             $plans = $this->applyGymFilter($query)->latest()->get();
         }
 
-        // If AJAX request, return JSON with table body
-        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'diet_plans' => $plans
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'html' => view('diet-plans._table-body', compact('plans'))->render()
@@ -186,7 +196,18 @@ class DietPlanController extends BaseController
         $plan = DietPlan::with(['trainer', 'member'])->findOrFail($id);
         $this->validateGymAccess($plan->gym_id);
 
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'diet_plan' => $plan
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return JSON with HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'plan' => $plan,

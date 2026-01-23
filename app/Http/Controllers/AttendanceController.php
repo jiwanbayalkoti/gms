@@ -58,8 +58,18 @@ class AttendanceController extends BaseController
         }
         $classes = $classesQuery->get();
 
-        // If AJAX request, return JSON with table body
-        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'attendances' => $attendances
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'html' => view('attendances._table-body', compact('attendances'))->render()
@@ -165,7 +175,18 @@ class AttendanceController extends BaseController
         $attendance = Attendance::with(['member', 'gymClass'])->findOrFail($id);
         $this->validateGymAccess($attendance->gym_id);
 
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'attendance' => $attendance
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return JSON with HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'attendance' => $attendance,

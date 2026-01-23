@@ -52,8 +52,18 @@ class PaymentController extends BaseController
         }
         $members = $membersQuery->get();
 
-        // If AJAX request, return JSON with table body
-        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'payments' => $payments
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'html' => view('payments._table-body', compact('payments'))->render()
@@ -188,7 +198,18 @@ class PaymentController extends BaseController
         $payment = Payment::with(['member', 'membershipPlan', 'gym'])->findOrFail($id);
         $this->validateGymAccess($payment->gym_id);
 
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'payment' => $payment
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return JSON with HTML
+        if ($this->isWebAjaxRequest($request)) {
             return response()->json([
                 'success' => true,
                 'payment' => $payment,
