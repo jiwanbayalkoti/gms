@@ -236,8 +236,29 @@ class MemberController extends BaseController
         // Validate gym access
         $this->validateGymAccess($member->gym_id);
 
-        // Return only form partial for AJAX requests
-        if ($request->expectsJson() || $request->ajax()) {
+        // Load relationships for API
+        $member->load('payments.membershipPlan');
+
+        // Check if request is from API (mobile app) or wants JSON
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'member' => new MemberResource($member),
+                    'editable_fields' => [
+                        'name',
+                        'email',
+                        'phone',
+                        'password',
+                        'profile_photo',
+                        'active'
+                    ]
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return HTML form
+        if ($this->isWebAjaxRequest($request)) {
             return view('members.edit', compact('member'))->render();
         }
 

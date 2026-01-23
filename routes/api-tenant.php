@@ -69,6 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         'update' => 'api.members.update',
         'destroy' => 'api.members.destroy',
     ]);
+    Route::get('/members/{member}/edit', [MemberController::class, 'edit'])->name('api.members.edit');
     Route::post('/members/{member}/status', [MemberController::class, 'apiUpdateStatus'])->name('api.members.status');
     
     // Trainers
