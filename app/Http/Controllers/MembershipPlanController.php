@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\MembershipPlanResource;
 use App\Models\MembershipPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,14 +44,30 @@ class MembershipPlanController extends BaseController
         
         $plans = $this->applyGymFilter($query)->latest()->get();
 
-        // If AJAX request, return JSON with plans list
-        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        // Check if request is from API (mobile app) or wants JSON
+        // API requests come from /api/* path or have Accept: application/json header
+        if ($request->is('api/*') || $request->wantsJson() || $request->expectsJson() || 
+            $request->header('Accept') === 'application/json' ||
+            $request->header('Content-Type') === 'application/json') {
+            
+            // Return JSON response for mobile app
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'membership_plans' => MembershipPlanResource::collection($plans)
+                ]
+            ]);
+        }
+
+        // For web AJAX requests (from web interface), return HTML
+        if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
                 'html' => view('membership-plans._gyms-list', compact('plans'))->render()
             ]);
         }
 
+        // For regular web requests, return view
         return view('membership-plans.index', compact('plans'));
     }
 
@@ -153,8 +170,22 @@ class MembershipPlanController extends BaseController
         // Validate gym access
         $this->validateGymAccess($plan->gym_id);
 
-        // Return JSON for AJAX requests
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if request is from API (mobile app) or wants JSON
+        if ($request->is('api/*') || $request->wantsJson() || $request->expectsJson() || 
+            $request->header('Accept') === 'application/json' ||
+            $request->header('Content-Type') === 'application/json') {
+            
+            // Return JSON response for mobile app
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'membership_plan' => new MembershipPlanResource($plan)
+                ]
+            ]);
+        }
+
+        // For web AJAX requests, return JSON with HTML
+        if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
                 'plan' => $plan,
@@ -162,6 +193,7 @@ class MembershipPlanController extends BaseController
             ]);
         }
 
+        // For regular web requests, return view
         return view('membership-plans.show', compact('plan'));
     }
 
