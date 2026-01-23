@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\MemberResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,11 +28,15 @@ class MemberController extends BaseController
         $this->authorizePermission('members.view');
 
         // Get query with gym filter applied
-        $query = User::where('role', 'Member');
+        $query = User::where('role', 'Member')->with('payments.membershipPlan');
         
         // Filter by status
         if ($request->filled('status')) {
-            $query->where('active', $request->status);
+            if ($request->status === 'active') {
+                $query->where('active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('active', false);
+            }
         }
         
         // Filter by search
@@ -44,17 +49,31 @@ class MemberController extends BaseController
             });
         }
         
-        $members = $this->applyGymFilter($query)->latest()->get();
-
         // Check if request is from API (mobile app) or wants JSON
         if ($this->isApiRequest($request)) {
+            // Use pagination for API requests
+            $perPage = $request->get('per_page', 15);
+            $members = $this->applyGymFilter($query)->latest()->paginate($perPage);
+            
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'members' => $members
+                    'members' => MemberResource::collection($members->items()),
+                    'pagination' => [
+                        'current_page' => $members->currentPage(),
+                        'total' => $members->total(),
+                        'per_page' => $members->perPage(),
+                        'last_page' => $members->lastPage(),
+                        'has_more_pages' => $members->hasMorePages(),
+                        'from' => $members->firstItem(),
+                        'to' => $members->lastItem(),
+                    ]
                 ]
             ]);
         }
+        
+        // For web requests, get all without pagination
+        $members = $this->applyGymFilter($query)->latest()->get();
 
         // For web AJAX requests, return HTML
         if ($this->isWebAjaxRequest($request)) {
@@ -141,8 +160,19 @@ class MemberController extends BaseController
         }
 
         $member = User::create($memberData);
+        $member->load('payments.membershipPlan');
 
         // Return JSON response for AJAX requests
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Member created successfully.',
+                'data' => [
+                    'member' => new MemberResource($member)
+                ]
+            ], 201);
+        }
+        
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -169,12 +199,15 @@ class MemberController extends BaseController
         // Validate gym access
         $this->validateGymAccess($member->gym_id);
 
+        // Load relationships for API
+        $member->load('payments.membershipPlan', 'workoutPlansAssigned', 'dietPlansAssigned', 'bookings', 'attendanceRecords');
+        
         // Check if request is from API (mobile app) or wants JSON
         if ($this->isApiRequest($request)) {
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'member' => $member
+                    'member' => new MemberResource($member)
                 ]
             ]);
         }
@@ -253,8 +286,19 @@ class MemberController extends BaseController
         }
 
         $member->save();
+        $member->load('payments.membershipPlan');
 
         // Return JSON response for AJAX requests
+        if ($this->isApiRequest($request)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Member updated successfully.',
+                'data' => [
+                    'member' => new MemberResource($member->fresh())
+                ]
+            ]);
+        }
+        
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -345,12 +389,26 @@ class MemberController extends BaseController
             });
         }
         
-        $members = $this->applyGymFilter($query)->latest()->get();
+        // Use pagination for API requests
+        $perPage = $request->get('per_page', 15);
+        $members = $this->applyGymFilter($query)->with('payments.membershipPlan')->latest()->paginate($perPage);
 
-        return $this->apiSuccess([
-            'members' => $members,
-            'count' => $members->count()
-        ], 'Members retrieved successfully');
+        return response()->json([
+            'success' => true,
+            'message' => 'Members retrieved successfully',
+            'data' => [
+                'members' => MemberResource::collection($members->items()),
+                'pagination' => [
+                    'current_page' => $members->currentPage(),
+                    'total' => $members->total(),
+                    'per_page' => $members->perPage(),
+                    'last_page' => $members->lastPage(),
+                    'has_more_pages' => $members->hasMorePages(),
+                    'from' => $members->firstItem(),
+                    'to' => $members->lastItem(),
+                ]
+            ]
+        ]);
     }
 
     /**
@@ -360,10 +418,18 @@ class MemberController extends BaseController
     {
         $this->authorizePermission('members.view');
 
-        $member = User::where('role', 'Member')->findOrFail($id);
+        $member = User::where('role', 'Member')
+            ->with('payments.membershipPlan', 'workoutPlansAssigned', 'dietPlansAssigned', 'bookings', 'attendanceRecords')
+            ->findOrFail($id);
         $this->validateGymAccess($member->gym_id);
 
-        return $this->apiSuccess($member, 'Member retrieved successfully');
+        return response()->json([
+            'success' => true,
+            'message' => 'Member retrieved successfully',
+            'data' => [
+                'member' => new MemberResource($member)
+            ]
+        ]);
     }
 
     /**
@@ -415,8 +481,15 @@ class MemberController extends BaseController
         }
 
         $member = User::create($memberData);
+        $member->load('payments.membershipPlan');
 
-        return $this->apiSuccess($member, 'Member created successfully', 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Member created successfully',
+            'data' => [
+                'member' => new MemberResource($member)
+            ]
+        ], 201);
     }
 
     /**
@@ -455,8 +528,15 @@ class MemberController extends BaseController
         }
 
         $member->save();
+        $member->load('payments.membershipPlan');
 
-        return $this->apiSuccess($member, 'Member updated successfully');
+        return response()->json([
+            'success' => true,
+            'message' => 'Member updated successfully',
+            'data' => [
+                'member' => new MemberResource($member->fresh())
+            ]
+        ]);
     }
 
     /**
@@ -492,7 +572,14 @@ class MemberController extends BaseController
 
         $member->active = $request->active;
         $member->save();
+        $member->load('payments.membershipPlan');
 
-        return $this->apiSuccess($member, 'Member status updated successfully');
+        return response()->json([
+            'success' => true,
+            'message' => 'Member status updated successfully',
+            'data' => [
+                'member' => new MemberResource($member->fresh())
+            ]
+        ]);
     }
 }
