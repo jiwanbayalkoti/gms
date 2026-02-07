@@ -47,9 +47,10 @@ GET    /api/v1/user-management?category=members|trainers|staff
 
 ### Members
 ```
-GET    /api/v1/members            - List members
+GET    /api/v1/members            - List members (with pagination, search, filter)
 POST   /api/v1/members            - Create member
 GET    /api/v1/members/{id}       - Get member
+GET    /api/v1/members/{id}/edit - Get member for editing
 PUT    /api/v1/members/{id}       - Update member
 DELETE /api/v1/members/{id}       - Delete member
 POST   /api/v1/members/{id}/status - Update member status

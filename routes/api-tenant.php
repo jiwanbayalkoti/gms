@@ -175,11 +175,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/settings', [SettingController::class, 'apiIndex'])->name('api.settings.index');
     Route::put('/settings', [SettingController::class, 'apiUpdate'])->name('api.settings.update');
     
-    // Reports
-    Route::get('/reports/attendance', [ReportController::class, 'apiAttendance'])->name('api.reports.attendance');
-    Route::get('/reports/classes', [ReportController::class, 'apiClasses'])->name('api.reports.classes');
-    Route::get('/reports/payments', [ReportController::class, 'apiPayments'])->name('api.reports.payments');
-    Route::get('/reports/members', [ReportController::class, 'apiMembers'])->name('api.reports.members');
+    // Reports (same controller methods as web - returns JSON for API, view for web)
+    Route::get('/reports/attendance', [ReportController::class, 'attendance'])->name('api.reports.attendance');
+    Route::get('/reports/classes', [ReportController::class, 'classes'])->name('api.reports.classes');
+    Route::get('/reports/payments', [ReportController::class, 'payments'])->name('api.reports.payments');
+    Route::get('/reports/members', [ReportController::class, 'members'])->name('api.reports.members');
     
     // Notifications
     Route::apiResource('notifications', NotificationController::class)->names([
