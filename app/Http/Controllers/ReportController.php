@@ -42,18 +42,29 @@ class ReportController extends BaseController
             'without_checkout' => $attendances->whereNull('check_out_time')->count(),
         ];
 
-        // API request (mobile app) - return JSON data
-        if ($this->isApiRequest($request)) {
+        // API request (mobile app - from /api/v1/reports/*) - return JSON data
+        if ($request->routeIs('api.reports.*') || $request->is('api/*')) {
             return $this->apiSuccess([
-                'attendances' => $attendances,
+                'attendances' => $attendances->map(function ($a) {
+                    return [
+                        'id' => $a->id,
+                        'member_id' => $a->member_id,
+                        'member' => $a->member ? ['id' => $a->member->id, 'name' => $a->member->name] : null,
+                        'class_id' => $a->class_id,
+                        'gym_class' => $a->gymClass ? ['id' => $a->gymClass->id, 'name' => $a->gymClass->name] : null,
+                        'check_in_time' => $a->check_in_time?->toIso8601String(),
+                        'check_out_time' => $a->check_out_time?->toIso8601String(),
+                        'gym_id' => $a->gym_id,
+                    ];
+                })->values(),
                 'stats' => $stats,
                 'start_date' => $startDate,
                 'end_date' => $endDate
             ], 'Attendance report retrieved successfully');
         }
 
-        // Web AJAX request - return JSON with HTML partials
-        if ($this->isWebAjaxRequest($request)) {
+        // Web AJAX request (filter/auto-load) - return JSON with HTML partials
+        if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
                 'statsHtml' => view('reports._attendance-stats', compact('stats'))->render(),
@@ -94,18 +105,32 @@ class ReportController extends BaseController
                 : 0,
         ];
 
-        // API request (mobile app) - return JSON data
-        if ($this->isApiRequest($request)) {
+        // API request (mobile app - from /api/v1/reports/*) - return JSON data
+        if ($request->routeIs('api.reports.*') || $request->is('api/*')) {
             return $this->apiSuccess([
-                'classes' => $classes,
+                'classes' => $classes->map(function ($c) {
+                    return [
+                        'id' => $c->id,
+                        'name' => $c->name,
+                        'description' => $c->description,
+                        'trainer_id' => $c->trainer_id,
+                        'trainer' => $c->trainer ? ['id' => $c->trainer->id, 'name' => $c->trainer->name] : null,
+                        'start_time' => $c->start_time?->toIso8601String(),
+                        'end_time' => $c->end_time?->toIso8601String(),
+                        'capacity' => $c->capacity,
+                        'current_bookings' => $c->current_bookings,
+                        'status' => $c->status,
+                        'gym_id' => $c->gym_id,
+                    ];
+                })->values(),
                 'stats' => $stats,
                 'start_date' => $startDate,
                 'end_date' => $endDate
             ], 'Classes report retrieved successfully');
         }
 
-        // Web AJAX request - return JSON with HTML partials
-        if ($this->isWebAjaxRequest($request)) {
+        // Web AJAX request (filter/auto-load) - return JSON with HTML partials
+        if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
                 'statsHtml' => view('reports._classes-stats', compact('stats'))->render(),
@@ -148,26 +173,44 @@ class ReportController extends BaseController
             }),
         ];
 
-        // API request (mobile app) - return JSON data
-        if ($this->isApiRequest($request)) {
+        // API request (mobile app - from /api/v1/reports/*) - return JSON data
+        if ($request->routeIs('api.reports.*') || $request->is('api/*')) {
             $apiStats = [
                 'total_payments' => $payments->count(),
-                'total_amount' => $payments->sum('amount'),
+                'total_amount' => (float) $payments->sum('amount'),
                 'completed_payments' => $payments->where('payment_status', 'Completed')->count(),
-                'completed_amount' => $payments->where('payment_status', 'Completed')->sum('amount'),
+                'completed_amount' => (float) $payments->where('payment_status', 'Completed')->sum('amount'),
                 'pending_payments' => $payments->where('payment_status', 'Pending')->count(),
                 'failed_payments' => $payments->where('payment_status', 'Failed')->count(),
+                'refunded_payments' => $payments->where('payment_status', 'Refunded')->count(),
+                'by_method' => $payments->groupBy('payment_method')->map(function ($group) {
+                    return ['count' => $group->count(), 'amount' => (float) $group->sum('amount')];
+                })->toArray(),
             ];
             return $this->apiSuccess([
-                'payments' => $payments,
+                'payments' => $payments->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'member_id' => $p->member_id,
+                        'member' => $p->member ? ['id' => $p->member->id, 'name' => $p->member->name] : null,
+                        'membership_plan_id' => $p->membership_plan_id,
+                        'membership_plan' => $p->membershipPlan ? ['id' => $p->membershipPlan->id, 'name' => $p->membershipPlan->name] : null,
+                        'amount' => (float) $p->amount,
+                        'payment_method' => $p->payment_method,
+                        'payment_status' => $p->payment_status,
+                        'payment_date' => $p->payment_date?->format('Y-m-d'),
+                        'expiry_date' => $p->expiry_date?->format('Y-m-d'),
+                        'gym_id' => $p->gym_id,
+                    ];
+                })->values(),
                 'stats' => $apiStats,
                 'start_date' => $startDate,
                 'end_date' => $endDate
             ], 'Payments report retrieved successfully');
         }
 
-        // Web AJAX request - return JSON with HTML partials
-        if ($this->isWebAjaxRequest($request)) {
+        // Web AJAX request (filter/auto-load) - return JSON with HTML partials
+        if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
                 'statsHtml' => view('reports._payments-stats', compact('stats'))->render(),
@@ -205,10 +248,22 @@ class ReportController extends BaseController
             'total_attendance' => $members->sum('attendances_count'),
         ];
 
-        // API request (mobile app) - return JSON data
-        if ($this->isApiRequest($request)) {
+        // API request (mobile app - from /api/v1/reports/*) - return JSON data
+        if ($request->routeIs('api.reports.*') || $request->is('api/*')) {
             return $this->apiSuccess([
-                'members' => $members,
+                'members' => $members->map(function ($m) {
+                    return [
+                        'id' => $m->id,
+                        'name' => $m->name,
+                        'email' => $m->email,
+                        'phone' => $m->phone,
+                        'active' => (bool) $m->active,
+                        'bookings_count' => $m->bookings_count ?? 0,
+                        'payments_count' => $m->payments_count ?? 0,
+                        'attendances_count' => $m->attendances_count ?? 0,
+                        'gym_id' => $m->gym_id,
+                    ];
+                })->values(),
                 'stats' => $stats
             ], 'Members report retrieved successfully');
         }

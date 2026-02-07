@@ -125,8 +125,8 @@
     // Auto-filter payments report
     window.applyPaymentsReportFilters = function() {
         var formData = {
-            start_date: $('#start_date').val(),
-            end_date: $('#end_date').val(),
+            start_date: $('#paymentsReportFilterForm #start_date').val(),
+            end_date: $('#paymentsReportFilterForm #end_date').val(),
         };
         
         // Show loading
@@ -137,8 +137,7 @@
             type: 'GET',
             data: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
+                'X-Requested-With': 'XMLHttpRequest'
             },
             success: function(response) {
                 if (response.success) {
@@ -165,12 +164,12 @@
         });
     };
     
-    // Auto-filter on date change
-    $('#start_date, #end_date').on('change', function() {
+    // Auto-filter on date change (change + input for better compatibility)
+    $('#paymentsReportFilterForm #start_date, #paymentsReportFilterForm #end_date').on('change input', function() {
         clearTimeout(filterTimeout);
         filterTimeout = setTimeout(function() {
             window.applyPaymentsReportFilters();
-        }, 500);
+        }, 300);
     });
     
     // Reset filters

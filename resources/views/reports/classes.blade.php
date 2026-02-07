@@ -90,8 +90,8 @@
     // Auto-filter classes report
     window.applyClassesReportFilters = function() {
         var formData = {
-            start_date: $('#start_date').val(),
-            end_date: $('#end_date').val(),
+            start_date: $('#classesReportFilterForm #start_date').val(),
+            end_date: $('#classesReportFilterForm #end_date').val(),
         };
         
         // Show loading
@@ -102,8 +102,7 @@
             type: 'GET',
             data: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
+                'X-Requested-With': 'XMLHttpRequest'
             },
             success: function(response) {
                 if (response.success) {
@@ -130,12 +129,12 @@
         });
     };
     
-    // Auto-filter on date change
-    $('#start_date, #end_date').on('change', function() {
+    // Auto-filter on date change (change + input for better compatibility)
+    $('#classesReportFilterForm #start_date, #classesReportFilterForm #end_date').on('change input', function() {
         clearTimeout(filterTimeout);
         filterTimeout = setTimeout(function() {
             window.applyClassesReportFilters();
-        }, 500);
+        }, 300);
     });
     
     // Reset filters

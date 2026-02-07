@@ -89,8 +89,8 @@
     // Auto-filter attendance report
     window.applyAttendanceReportFilters = function() {
         var formData = {
-            start_date: $('#start_date').val(),
-            end_date: $('#end_date').val(),
+            start_date: $('#attendanceReportFilterForm #start_date').val(),
+            end_date: $('#attendanceReportFilterForm #end_date').val(),
         };
         
         // Show loading
@@ -101,8 +101,7 @@
             type: 'GET',
             data: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
+                'X-Requested-With': 'XMLHttpRequest'
             },
             success: function(response) {
                 if (response.success) {
@@ -129,12 +128,12 @@
         });
     };
     
-    // Auto-filter on date change
-    $('#start_date, #end_date').on('change', function() {
+    // Auto-filter on date change (change + input for better compatibility)
+    $('#attendanceReportFilterForm #start_date, #attendanceReportFilterForm #end_date').on('change input', function() {
         clearTimeout(filterTimeout);
         filterTimeout = setTimeout(function() {
             window.applyAttendanceReportFilters();
-        }, 500);
+        }, 300);
     });
     
     // Reset filters
