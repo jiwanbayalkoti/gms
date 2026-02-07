@@ -42,18 +42,24 @@ class ReportController extends BaseController
             'without_checkout' => $attendances->whereNull('check_out_time')->count(),
         ];
 
-        // API request (mobile app - from /api/v1/reports/*) - return JSON data
+        // API request (mobile app) - same data structure as web
         if ($request->routeIs('api.reports.*') || $request->is('api/*')) {
             return $this->apiSuccess([
                 'attendances' => $attendances->map(function ($a) {
+                    $duration = null;
+                    if ($a->check_out_time && $a->check_in_time) {
+                        $duration = $a->check_in_time->diffForHumans($a->check_out_time, true);
+                    }
                     return [
                         'id' => $a->id,
                         'member_id' => $a->member_id,
-                        'member' => $a->member ? ['id' => $a->member->id, 'name' => $a->member->name] : null,
+                        'member_name' => $a->member?->name ?? 'N/A',
                         'class_id' => $a->class_id,
-                        'gym_class' => $a->gymClass ? ['id' => $a->gymClass->id, 'name' => $a->gymClass->name] : null,
-                        'check_in_time' => $a->check_in_time?->toIso8601String(),
-                        'check_out_time' => $a->check_out_time?->toIso8601String(),
+                        'class_name' => $a->gymClass?->name ?? 'N/A',
+                        'check_in_time' => $a->check_in_time?->format('M d, Y h:i A'),
+                        'check_out_time' => $a->check_out_time?->format('M d, Y h:i A'),
+                        'check_out_time_raw' => $a->check_out_time?->toIso8601String(),
+                        'duration' => $duration,
                         'gym_id' => $a->gym_id,
                     ];
                 })->values(),
@@ -105,7 +111,7 @@ class ReportController extends BaseController
                 : 0,
         ];
 
-        // API request (mobile app - from /api/v1/reports/*) - return JSON data
+        // API request (mobile app) - same data structure as web
         if ($request->routeIs('api.reports.*') || $request->is('api/*')) {
             return $this->apiSuccess([
                 'classes' => $classes->map(function ($c) {
@@ -114,11 +120,14 @@ class ReportController extends BaseController
                         'name' => $c->name,
                         'description' => $c->description,
                         'trainer_id' => $c->trainer_id,
-                        'trainer' => $c->trainer ? ['id' => $c->trainer->id, 'name' => $c->trainer->name] : null,
-                        'start_time' => $c->start_time?->toIso8601String(),
+                        'trainer_name' => $c->trainer?->name ?? 'N/A',
+                        'start_time' => $c->start_time?->format('M d, Y h:i A'),
+                        'start_time_raw' => $c->start_time?->toIso8601String(),
                         'end_time' => $c->end_time?->toIso8601String(),
                         'capacity' => $c->capacity,
                         'current_bookings' => $c->current_bookings,
+                        'bookings_display' => $c->current_bookings . ' / ' . $c->capacity,
+                        'is_full' => $c->isFull(),
                         'status' => $c->status,
                         'gym_id' => $c->gym_id,
                     ];
@@ -173,32 +182,34 @@ class ReportController extends BaseController
             }),
         ];
 
-        // API request (mobile app - from /api/v1/reports/*) - return JSON data
+        // API request (mobile app) - same data structure as web
         if ($request->routeIs('api.reports.*') || $request->is('api/*')) {
+            $byMethod = $stats['by_method']->mapWithKeys(function ($group, $method) {
+                return [$method => ['count' => $group['count'], 'amount' => (float) $group['amount']]];
+            })->toArray();
             $apiStats = [
-                'total_payments' => $payments->count(),
-                'total_amount' => (float) $payments->sum('amount'),
-                'completed_payments' => $payments->where('payment_status', 'Completed')->count(),
-                'completed_amount' => (float) $payments->where('payment_status', 'Completed')->sum('amount'),
-                'pending_payments' => $payments->where('payment_status', 'Pending')->count(),
-                'failed_payments' => $payments->where('payment_status', 'Failed')->count(),
-                'refunded_payments' => $payments->where('payment_status', 'Refunded')->count(),
-                'by_method' => $payments->groupBy('payment_method')->map(function ($group) {
-                    return ['count' => $group->count(), 'amount' => (float) $group->sum('amount')];
-                })->toArray(),
+                'total_payments' => $stats['total_payments'],
+                'total_amount' => (float) $stats['total_amount'],
+                'completed_payments' => $stats['completed_payments'],
+                'completed_amount' => (float) $stats['completed_amount'],
+                'failed_payments' => $stats['failed_payments'],
+                'refunded_payments' => $stats['refunded_payments'],
+                'by_method' => $byMethod,
             ];
             return $this->apiSuccess([
                 'payments' => $payments->map(function ($p) {
                     return [
                         'id' => $p->id,
                         'member_id' => $p->member_id,
-                        'member' => $p->member ? ['id' => $p->member->id, 'name' => $p->member->name] : null,
+                        'member_name' => $p->member?->name ?? 'N/A',
                         'membership_plan_id' => $p->membership_plan_id,
-                        'membership_plan' => $p->membershipPlan ? ['id' => $p->membershipPlan->id, 'name' => $p->membershipPlan->name] : null,
+                        'membership_plan_name' => $p->membershipPlan?->name ?? 'N/A',
                         'amount' => (float) $p->amount,
+                        'amount_formatted' => '$' . number_format($p->amount, 2),
                         'payment_method' => $p->payment_method,
                         'payment_status' => $p->payment_status,
-                        'payment_date' => $p->payment_date?->format('Y-m-d'),
+                        'payment_date' => $p->payment_date?->format('M d, Y'),
+                        'payment_date_raw' => $p->payment_date?->format('Y-m-d'),
                         'expiry_date' => $p->expiry_date?->format('Y-m-d'),
                         'gym_id' => $p->gym_id,
                     ];
@@ -248,7 +259,7 @@ class ReportController extends BaseController
             'total_attendance' => $members->sum('attendances_count'),
         ];
 
-        // API request (mobile app - from /api/v1/reports/*) - return JSON data
+        // API request (mobile app) - same data structure as web
         if ($request->routeIs('api.reports.*') || $request->is('api/*')) {
             return $this->apiSuccess([
                 'members' => $members->map(function ($m) {
@@ -258,13 +269,24 @@ class ReportController extends BaseController
                         'email' => $m->email,
                         'phone' => $m->phone,
                         'active' => (bool) $m->active,
-                        'bookings_count' => $m->bookings_count ?? 0,
-                        'payments_count' => $m->payments_count ?? 0,
-                        'attendances_count' => $m->attendances_count ?? 0,
+                        'status_display' => $m->active ? 'Active' : 'Inactive',
+                        'bookings_count' => (int) ($m->bookings_count ?? 0),
+                        'payments_count' => (int) ($m->payments_count ?? 0),
+                        'attendances_count' => (int) ($m->attendances_count ?? 0),
                         'gym_id' => $m->gym_id,
                     ];
                 })->values(),
-                'stats' => $stats
+                'stats' => [
+                    'total_members' => $stats['total_members'],
+                    'active_members' => $stats['active_members'],
+                    'inactive_members' => $stats['inactive_members'],
+                    'members_with_bookings' => $stats['members_with_bookings'],
+                    'members_with_payments' => $stats['members_with_payments'],
+                    'members_with_attendance' => $stats['members_with_attendance'],
+                    'total_bookings' => $stats['total_bookings'],
+                    'total_payments' => $stats['total_payments'],
+                    'total_attendance' => $stats['total_attendance'],
+                ]
             ], 'Members report retrieved successfully');
         }
 
