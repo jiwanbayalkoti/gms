@@ -105,7 +105,14 @@ abstract class BaseController extends Controller
         }
         
         if (!$this->hasPermission($permission)) {
-            abort(403, "You do not have permission to perform this action: {$permission}");
+            $message = "You do not have permission to perform this action: {$permission}";
+            $request = request();
+            if ($request && ($request->is('api/*') || $request->expectsJson())) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    $this->apiForbidden($message)
+                );
+            }
+            abort(403, $message);
         }
     }
 

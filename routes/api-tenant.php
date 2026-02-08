@@ -39,9 +39,28 @@ use Illuminate\Support\Facades\Route;
 // Logout and user routes require authentication
 Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->middleware('auth:sanctum')->name('api.logout');
 Route::get('/user', function (Request $request) {
+    $user = $request->user();
     return response()->json([
         'success' => true,
-        'data' => $request->user()
+        'data' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'role' => $user->role,
+            'gym_id' => $user->gym_id,
+            'active' => $user->active,
+            'profile_photo' => $user->profile_photo,
+            'staff_type' => $user->staff_type ?? null,
+            // Role helpers (same as web sidebar uses)
+            'is_super_admin' => $user->isSuperAdmin(),
+            'is_gym_admin' => $user->isGymAdmin(),
+            'is_trainer' => $user->isTrainer(),
+            'is_staff' => $user->isStaff(),
+            'is_member' => $user->isMember(),
+            // Permissions array (for access control - same as web)
+            'permissions' => $user->getPermissions(),
+        ],
     ]);
 })->middleware('auth:sanctum')->name('api.user');
 
