@@ -16,8 +16,9 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body">
-                    <form id="settings-form" enctype="multipart/form-data">
+                    <form id="settings-form" method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data">
                         @csrf
+                        @method('PUT')
 
                         <div class="form-group">
                             <label for="gym_name">Gym Name <span class="text-danger">*</span></label>
@@ -255,6 +256,37 @@
                         </div>
 
                         <hr>
+                        <h5>Social Media API Credentials</h5>
+                        <p class="text-muted">Use these credentials for posting from Social Media module.</p>
+
+                        <div class="form-group">
+                            <label for="facebook_page_id">Facebook Page ID</label>
+                            <input type="text" class="form-control" id="facebook_page_id" name="facebook_page_id" value="{{ old('facebook_page_id', $settings->facebook_page_id ?? '') }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="facebook_page_access_token">Facebook Page Access Token</label>
+                            <textarea class="form-control" id="facebook_page_access_token" name="facebook_page_access_token" rows="2">{{ old('facebook_page_access_token', $settings->facebook_page_access_token ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-outline-info btn-sm" id="test-facebook-btn">
+                                Test Facebook Connection
+                            </button>
+                            <small id="test-facebook-result" class="form-text"></small>
+                        </div>
+                        <div class="form-group">
+                            <label for="instagram_business_account_id">Instagram Business Account ID</label>
+                            <input type="text" class="form-control" id="instagram_business_account_id" name="instagram_business_account_id" value="{{ old('instagram_business_account_id', $settings->instagram_business_account_id ?? '') }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="youtube_channel_id">YouTube Channel ID</label>
+                            <input type="text" class="form-control" id="youtube_channel_id" name="youtube_channel_id" value="{{ old('youtube_channel_id', $settings->youtube_channel_id ?? '') }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="youtube_access_token">YouTube Access Token</label>
+                            <textarea class="form-control" id="youtube_access_token" name="youtube_access_token" rows="2">{{ old('youtube_access_token', $settings->youtube_access_token ?? '') }}</textarea>
+                        </div>
+
+                        <hr>
                         <h5>Membership Pause Feature</h5>
 
                         <div class="form-group">
@@ -311,6 +343,45 @@ function toggleSmsProviderFields() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     toggleSmsProviderFields();
+
+    const testBtn = document.getElementById('test-facebook-btn');
+    if (testBtn) {
+        testBtn.addEventListener('click', function() {
+            const pageId = document.getElementById('facebook_page_id').value;
+            const token = document.getElementById('facebook_page_access_token').value;
+            const resultEl = document.getElementById('test-facebook-result');
+
+            resultEl.className = 'form-text text-muted';
+            resultEl.textContent = 'Testing...';
+
+            fetch('{{ route("settings.test-facebook") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    facebook_page_id: pageId,
+                    facebook_page_access_token: token
+                })
+            })
+            .then(async (response) => {
+                const payload = await response.json();
+                if (payload.success) {
+                    resultEl.className = 'form-text text-success';
+                    resultEl.textContent = payload.message + ' Page: ' + (payload.data?.name || 'N/A');
+                } else {
+                    resultEl.className = 'form-text text-danger';
+                    resultEl.textContent = payload.message || 'Facebook test failed.';
+                }
+            })
+            .catch(() => {
+                resultEl.className = 'form-text text-danger';
+                resultEl.textContent = 'Unable to test Facebook connection right now.';
+            });
+        });
+    }
 });
 </script>
 @endpush

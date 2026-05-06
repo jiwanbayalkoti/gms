@@ -205,6 +205,10 @@ class BulkSmsController extends BaseController
                 'message_preview' => substr($message, 0, 50),
             ]);
 
+            // Prefix message with gym name for sender clarity.
+            $settings = Setting::current();
+            $message = $this->formatOutgoingMessage($message, $settings->gym_name ?? null);
+
             // Send bulk SMS
             $result = $this->smsService->sendBulkSms(
                 $phones,
@@ -384,6 +388,9 @@ class BulkSmsController extends BaseController
         }
 
         try {
+            $settings = Setting::current();
+            $message = $this->formatOutgoingMessage(trim($validated['message']), $settings->gym_name ?? null);
+
             $sent = 0;
             $failed = 0;
             $totalCost = 0;
@@ -394,13 +401,13 @@ class BulkSmsController extends BaseController
                     continue;
                 }
 
-                $result = $this->smsService->send($recipient->phone, $validated['message']);
+                $result = $this->smsService->send($recipient->phone, $message);
                 
                 SmsLog::create([
                     'gym_id' => $user->gym_id,
                     'user_id' => $recipient->id,
                     'phone' => $recipient->phone,
-                    'message' => $validated['message'],
+                    'message' => $message,
                     'status' => $result['success'] ? 'sent' : 'failed',
                     'cost' => $result['cost'] ?? 0,
                     'sent_at' => $result['success'] ? now() : null,
@@ -448,5 +455,27 @@ class BulkSmsController extends BaseController
             'total' => $sent + $failed,
             'cost' => round($cost, 2)
         ], 'SMS statistics retrieved successfully');
+    }
+
+    /**
+     * Format outgoing SMS message with gym name prefix.
+     */
+    private function formatOutgoingMessage(string $message, ?string $gymName): string
+    {
+        $message = trim($message);
+        $gymName = trim((string) $gymName);
+
+        if ($gymName === '') {
+            return $message;
+        }
+
+        $prefix = '[' . $gymName . '] ';
+
+        // Avoid duplicating prefix if admin already added it.
+        if (str_starts_with($message, $prefix)) {
+            return $message;
+        }
+
+        return $prefix . $message;
     }
 }

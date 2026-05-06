@@ -141,7 +141,15 @@
     @endif
 @endif
 
-{{-- Social Media - Removed for now, will be added later --}}
+{{-- Social Media --}}
+@if(Route::has('social-media.index') && (Auth::user()->hasPermission('notifications.create') || Auth::user()->isGymAdmin() || Auth::user()->isSuperAdmin()))
+<li class="nav-item">
+    <a href="{{ route('social-media.index') }}" class="nav-link {{ request()->routeIs('social-media.*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-hashtag"></i>
+        <p>Social Media</p>
+    </a>
+</li>
+@endif
 
 {{-- Reports --}}
 @if(Route::has('reports.attendance') && (Auth::user()->hasPermission('reports.view') || Auth::user()->isGymAdmin()))

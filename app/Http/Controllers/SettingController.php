@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 class SettingController extends BaseController
@@ -58,6 +59,11 @@ class SettingController extends BaseController
             'twilio_from_number' => 'nullable|string|max:20',
             'sparrow_sms_token' => 'nullable|string|max:255',
             'sparrow_sms_from' => 'nullable|string|max:11',
+            'facebook_page_access_token' => 'nullable|string',
+            'facebook_page_id' => 'nullable|string|max:255',
+            'instagram_business_account_id' => 'nullable|string|max:255',
+            'youtube_access_token' => 'nullable|string',
+            'youtube_channel_id' => 'nullable|string|max:255',
             'enable_email_notifications' => 'boolean',
             'enable_pause_feature' => 'boolean',
             'minimum_pause_days' => 'required|integer|min:1',
@@ -77,6 +83,11 @@ class SettingController extends BaseController
         $settings->twilio_from_number = $request->input('twilio_from_number');
         $settings->sparrow_sms_token = $request->input('sparrow_sms_token');
         $settings->sparrow_sms_from = $request->input('sparrow_sms_from');
+        $settings->facebook_page_access_token = $request->input('facebook_page_access_token');
+        $settings->facebook_page_id = $request->input('facebook_page_id');
+        $settings->instagram_business_account_id = $request->input('instagram_business_account_id');
+        $settings->youtube_access_token = $request->input('youtube_access_token');
+        $settings->youtube_channel_id = $request->input('youtube_channel_id');
         $settings->enable_email_notifications = $request->has('enable_email_notifications');
         $settings->enable_pause_feature = $request->has('enable_pause_feature');
         $settings->minimum_pause_days = $request->input('minimum_pause_days', 7);
@@ -137,6 +148,11 @@ class SettingController extends BaseController
             'twilio_from_number' => 'nullable|string|max:20',
             'sparrow_sms_token' => 'nullable|string|max:255',
             'sparrow_sms_from' => 'nullable|string|max:11',
+            'facebook_page_access_token' => 'nullable|string',
+            'facebook_page_id' => 'nullable|string|max:255',
+            'instagram_business_account_id' => 'nullable|string|max:255',
+            'youtube_access_token' => 'nullable|string',
+            'youtube_channel_id' => 'nullable|string|max:255',
             'enable_email_notifications' => 'boolean',
             'enable_pause_feature' => 'boolean',
             'minimum_pause_days' => 'required|integer|min:1',
@@ -155,6 +171,11 @@ class SettingController extends BaseController
         $settings->twilio_from_number = $request->input('twilio_from_number');
         $settings->sparrow_sms_token = $request->input('sparrow_sms_token');
         $settings->sparrow_sms_from = $request->input('sparrow_sms_from');
+        $settings->facebook_page_access_token = $request->input('facebook_page_access_token');
+        $settings->facebook_page_id = $request->input('facebook_page_id');
+        $settings->instagram_business_account_id = $request->input('instagram_business_account_id');
+        $settings->youtube_access_token = $request->input('youtube_access_token');
+        $settings->youtube_channel_id = $request->input('youtube_channel_id');
         $settings->enable_email_notifications = $request->has('enable_email_notifications');
         $settings->enable_pause_feature = $request->has('enable_pause_feature');
         $settings->minimum_pause_days = $request->input('minimum_pause_days', 7);
@@ -178,5 +199,42 @@ class SettingController extends BaseController
         $settings->save();
         
         return $this->apiSuccess($settings, 'Settings updated successfully');
+    }
+
+    /**
+     * Test Facebook Page credentials from settings.
+     */
+    public function testFacebookConnection(Request $request)
+    {
+        $settings = Setting::current();
+        $pageId = $request->input('facebook_page_id', $settings->facebook_page_id);
+        $token = $request->input('facebook_page_access_token', $settings->facebook_page_access_token);
+
+        if (empty($pageId) || empty($token)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Facebook Page ID and Access Token are required.',
+            ], 422);
+        }
+
+        $response = Http::get("https://graph.facebook.com/v20.0/{$pageId}", [
+            'fields' => 'id,name',
+            'access_token' => $token,
+        ]);
+
+        if ($response->successful() && $response->json('id')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Facebook connection successful.',
+                'data' => $response->json(),
+            ]);
+        }
+
+        $errorMessage = $response->json('error.message') ?: $response->body();
+        return response()->json([
+            'success' => false,
+            'message' => $errorMessage,
+            'raw' => $response->json(),
+        ], 400);
     }
 }

@@ -21,6 +21,7 @@ use App\Http\Controllers\PauseRequestController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\SalaryPaymentController;
 use App\Http\Controllers\BulkSmsController;
+use App\Http\Controllers\SocialMediaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -96,6 +97,7 @@ Route::post('payments/process/stripe', [PaymentController::class, 'processStripe
 // Settings routes
 Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
 Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+Route::post('settings/test-facebook', [SettingController::class, 'testFacebookConnection'])->name('settings.test-facebook');
 
 // Report routes
 Route::get('reports/attendance', [ReportController::class, 'attendance'])->name('reports.attendance');
@@ -143,6 +145,12 @@ Route::post('salary-payments/{id}/update-status', [SalaryPaymentController::clas
 Route::get('bulk-sms', [BulkSmsController::class, 'index'])->name('bulk-sms.index');
 Route::post('bulk-sms/send', [BulkSmsController::class, 'send'])->name('bulk-sms.send');
 Route::get('bulk-sms/statistics', [BulkSmsController::class, 'statistics'])->name('bulk-sms.statistics');
+
+// Social Media routes
+Route::get('social-media', [SocialMediaController::class, 'index'])->name('social-media.index');
+Route::post('social-media', [SocialMediaController::class, 'store'])->name('social-media.store');
+Route::post('social-media/{socialMediaPost}/publish', [SocialMediaController::class, 'publish'])->name('social-media.publish');
+Route::delete('social-media/{socialMediaPost}', [SocialMediaController::class, 'destroy'])->name('social-media.destroy');
 
 // API routes for mobile - will be protected by Sanctum auth
 Route::prefix('api')->middleware(['auth:sanctum'])->group(function () {

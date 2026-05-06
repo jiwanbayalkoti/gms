@@ -262,4 +262,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/bulk-sms', [BulkSmsController::class, 'apiIndex'])->name('api.bulk-sms.index');
     Route::post('/bulk-sms/send', [BulkSmsController::class, 'apiSend'])->name('api.bulk-sms.send');
     Route::get('/bulk-sms/statistics', [BulkSmsController::class, 'apiStatistics'])->name('api.bulk-sms.statistics');
+
 });

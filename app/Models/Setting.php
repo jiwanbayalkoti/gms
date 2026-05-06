@@ -29,23 +29,14 @@ class Setting extends Model
         'twilio_from_number',
         'sparrow_sms_token',
         'sparrow_sms_from',
+        'facebook_page_access_token',
+        'facebook_page_id',
+        'instagram_business_account_id',
+        'youtube_access_token',
+        'youtube_channel_id',
         'enable_email_notifications',
         'enable_pause_feature',
         'minimum_pause_days',
-        // Social Media fields removed for now - will be added later
-        // 'facebook_app_id',
-        // 'facebook_app_secret',
-        // 'facebook_access_token',
-        // 'facebook_page_id',
-        // 'instagram_business_account_id',
-        // 'whatsapp_phone_number_id',
-        // 'whatsapp_access_token',
-        // 'whatsapp_business_account_id',
-        // 'youtube_client_id',
-        // 'youtube_client_secret',
-        // 'youtube_access_token',
-        // 'youtube_refresh_token',
-        // 'youtube_channel_id',
     ];
 
     protected $casts = [
