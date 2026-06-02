@@ -37,14 +37,13 @@ class SecurityHeaders
         // Permissions-Policy: Restrict browser features
         $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 
-        // Content-Security-Policy: Prevent XSS attacks
-        // Note: Adjust this based on your application's needs
+        // Content-Security-Policy: align with layouts/app.blade.php CDN assets
         $csp = "default-src 'self'; " .
                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.jquery.com https://cdn.jsdelivr.net; " .
-               "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " .
+               "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdnjs.cloudflare.com; " .
                "img-src 'self' data: https:; " .
-               "font-src 'self' https://cdn.jsdelivr.net data:; " .
-               "connect-src 'self'; " .
+               "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com https://cdnjs.cloudflare.com; " .
+               "connect-src 'self' https://cdn.jsdelivr.net; " .
                "frame-ancestors 'self';";
         
         $response->headers->set('Content-Security-Policy', $csp);

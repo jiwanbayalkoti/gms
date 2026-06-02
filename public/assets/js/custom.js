@@ -20,6 +20,8 @@
         
         // Now jQuery is available, initialize everything
         $(document).ready(function() {
+            initMobileSidebarMenu($);
+
             // Initialize tooltips
             $('[data-toggle="tooltip"]').tooltip();
             
@@ -43,6 +45,65 @@
         });
     }
     
+    function initMobileSidebarMenu($) {
+        var MOBILE_MAX = 991.98;
+        var $body = $('body');
+        var $backdrop = $('#sidebar-mobile-backdrop');
+
+        function isMobile() {
+            return window.matchMedia('(max-width: ' + MOBILE_MAX + 'px)').matches;
+        }
+
+        function closeSidebar() {
+            $body.removeClass('sidebar-open');
+        }
+
+        function openSidebar() {
+            $body.addClass('sidebar-open');
+        }
+
+        function toggleSidebar() {
+            if ($body.hasClass('sidebar-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        $('[data-widget="pushmenu"], .mobile-menu-toggle').each(function() {
+            this.addEventListener('click', function(e) {
+                if (!isMobile()) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                toggleSidebar();
+            }, true);
+        });
+
+        $backdrop.on('click', function() {
+            closeSidebar();
+        });
+
+        $(document).on('click', '.main-sidebar .nav-link', function() {
+            if (isMobile()) {
+                closeSidebar();
+            }
+        });
+
+        $(window).on('resize', function() {
+            if (!isMobile()) {
+                closeSidebar();
+            }
+        });
+
+        $(document).on('keyup', function(e) {
+            if (e.key === 'Escape') {
+                closeSidebar();
+            }
+        });
+    }
+
     // Start initialization
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWhenReady);

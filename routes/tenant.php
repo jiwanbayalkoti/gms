@@ -98,6 +98,12 @@ Route::post('payments/process/stripe', [PaymentController::class, 'processStripe
 Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
 Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
 Route::post('settings/test-facebook', [SettingController::class, 'testFacebookConnection'])->name('settings.test-facebook');
+Route::post('settings/meta-debug-token', [SettingController::class, 'debugMetaPageToken'])->name('settings.meta-debug-token');
+Route::get('settings/connect-meta', [SettingController::class, 'redirectToMeta'])->name('settings.connect-meta');
+Route::get('settings/meta/callback', [SettingController::class, 'handleMetaCallback'])->name('settings.meta-callback');
+Route::get('settings/connect-youtube', [SettingController::class, 'redirectToYoutube'])->name('settings.connect-youtube');
+Route::get('settings/youtube/callback', [SettingController::class, 'handleYoutubeCallback'])->name('settings.youtube-callback');
+Route::post('settings/test-youtube', [SettingController::class, 'testYoutubeConnection'])->name('settings.test-youtube');
 
 // Report routes
 Route::get('reports/attendance', [ReportController::class, 'attendance'])->name('reports.attendance');
@@ -149,7 +155,11 @@ Route::get('bulk-sms/statistics', [BulkSmsController::class, 'statistics'])->nam
 // Social Media routes
 Route::get('social-media', [SocialMediaController::class, 'index'])->name('social-media.index');
 Route::post('social-media', [SocialMediaController::class, 'store'])->name('social-media.store');
+Route::get('social-media/{socialMediaPost}', [SocialMediaController::class, 'show'])->name('social-media.show');
+Route::get('social-media/{socialMediaPost}/edit', [SocialMediaController::class, 'edit'])->name('social-media.edit');
+Route::put('social-media/{socialMediaPost}', [SocialMediaController::class, 'update'])->name('social-media.update');
 Route::post('social-media/{socialMediaPost}/publish', [SocialMediaController::class, 'publish'])->name('social-media.publish');
+Route::post('social-media/{socialMediaPost}/clear-media', [SocialMediaController::class, 'clearMedia'])->name('social-media.clear-media');
 Route::delete('social-media/{socialMediaPost}', [SocialMediaController::class, 'destroy'])->name('social-media.destroy');
 
 // API routes for mobile - will be protected by Sanctum auth

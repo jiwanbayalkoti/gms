@@ -22,39 +22,103 @@
     <!-- Dynamic Theme Colors from Settings -->
     @php
         try {
-        $settings = App\Models\Setting::current();
+            $settings = App\Models\Setting::current();
         } catch (\Exception $e) {
             $settings = null;
+        }
+        $primaryHex = $settings->primary_color ?? '#007bff';
+        $primaryContrast = '#ffffff';
+        if ($settings && $settings->primary_color) {
+            $hex = ltrim($settings->primary_color, '#');
+            if (strlen($hex) === 3) {
+                $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+            }
+            if (strlen($hex) === 6 && ctype_xdigit($hex)) {
+                $r = hexdec(substr($hex, 0, 2));
+                $g = hexdec(substr($hex, 2, 2));
+                $b = hexdec(substr($hex, 4, 2));
+                $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+                $primaryContrast = $luminance > 0.62 ? '#1f2937' : '#ffffff';
+            }
         }
     @endphp
     
     <style>
         :root {
-            --primary-color: {{ $settings->primary_color ?? '#007bff' }};
+            --primary-color: {{ $primaryHex }};
+            --primary-contrast: {{ $primaryContrast }};
             --secondary-color: {{ $settings->secondary_color ?? '#6c757d' }};
         }
         
-        /* Override AdminLTE primary color if settings exist */
         @if($settings && $settings->primary_color)
-        .btn-primary, .bg-primary, .text-primary, .nav-link.active {
-            background-color: {{ $settings->primary_color }} !important;
-            border-color: {{ $settings->primary_color }} !important;
-            color: #fff !important;
+        .btn-primary,
+        .btn-primary:hover,
+        .btn-primary:focus,
+        .btn-primary:active {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+            color: var(--primary-contrast) !important;
+        }
+        .bg-primary {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+            color: var(--primary-contrast) !important;
+        }
+        .main-sidebar .nav-link.active,
+        .sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link.active {
+            background-color: var(--primary-color) !important;
+            color: var(--primary-contrast) !important;
+        }
+        .main-sidebar .nav-link.active .nav-icon,
+        .main-sidebar .nav-link.active p {
+            color: var(--primary-contrast) !important;
+        }
+        .brand-link .fa-dumbbell.text-primary {
+            color: var(--primary-color) !important;
         }
         @endif
+
+        /* Top menu icon: neutral box + visible bars (SVG, not Font Awesome) */
+        .main-header .mobile-menu-toggle {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            background: #eef1f5 !important;
+            color: #1f2937 !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.65rem !important;
+            min-width: 44px;
+            min-height: 44px;
+            line-height: 1 !important;
+        }
+        .main-header .mobile-menu-toggle .menu-bars-icon {
+            display: block !important;
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            pointer-events: none;
+        }
+        .main-header .mobile-menu-toggle .menu-bars-icon path {
+            fill: #1f2937 !important;
+        }
     </style>
     
     @stack('styles')
 </head>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
 <div class="wrapper">
 
     <!-- Navbar -->
-    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light border-bottom">
         <!-- Left navbar links -->
         <ul class="navbar-nav">
             <li class="nav-item">
-                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                <a class="nav-link mobile-menu-toggle" data-widget="pushmenu" href="#" role="button" aria-label="Open menu">
+                    <svg class="menu-bars-icon" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                        <path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/>
+                    </svg>
+                </a>
             </li>
         </ul>
 
@@ -151,6 +215,8 @@
                 </nav>
     <!-- /.navbar -->
 
+    <div id="sidebar-mobile-backdrop" class="sidebar-mobile-backdrop" aria-hidden="true"></div>
+
     <!-- Main Sidebar Container -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
         <!-- Brand Logo -->
@@ -163,12 +229,9 @@
                 }
             @endphp
             @if($logoExists)
-                <img src="{{ asset('storage/' . $settings->logo) }}" alt="{{ $settings->gym_name ?? config('app.name') }}" class="brand-image img-circle elevation-3" style="opacity: .8" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <span class="brand-image img-circle elevation-3 bg-white d-flex align-items-center justify-content-center" style="width: 33px; height: 33px; display: none;">
-                    <i class="fas fa-dumbbell text-primary"></i>
-                </span>
+                <img src="{{ asset('storage/' . $settings->logo) }}" alt="{{ $settings->gym_name ?? config('app.name') }}" class="brand-image img-circle elevation-3" style="opacity: .8">
             @else
-                <span class="brand-image img-circle elevation-3 bg-white d-flex align-items-center justify-content-center" style="width: 33px; height: 33px;">
+                <span class="brand-image img-circle elevation-3 bg-white brand-logo-fallback">
                     <i class="fas fa-dumbbell text-primary"></i>
                 </span>
             @endif
@@ -184,16 +247,13 @@
                         $userPhotoUrl = Auth::check() ? getImageUrl(Auth::user()->profile_photo) : null;
                     @endphp
                     @if($userPhotoUrl)
-                        <img src="{{ $userPhotoUrl }}" class="img-circle elevation-2" alt="User Image" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="img-circle elevation-2 bg-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; display: none;">
-                            <span class="text-white">{{ substr(Auth::user()->name ?? 'U', 0, 1) }}</span>
-                        </div>
+                        <img src="{{ $userPhotoUrl }}" class="img-circle elevation-2 sidebar-user-photo" alt="{{ Auth::user()->name ?? 'User' }}">
                     @else
-                        <div class="img-circle elevation-2 bg-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                            <span class="text-white">{{ substr(Auth::user()->name ?? 'U', 0, 1) }}</span>
-                            </div>
-                        @endif
-                    </div>
+                        <div class="img-circle elevation-2 bg-primary sidebar-user-avatar">
+                            <span>{{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}</span>
+                        </div>
+                    @endif
+                </div>
                 <div class="info">
                     <a href="{{ route('profile.edit') }}" class="d-block">{{ Auth::user()->name ?? 'User' }}</a>
                     <small class="text-muted">{{ Auth::user()->role ?? 'Member' }}</small>

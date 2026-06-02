@@ -2,24 +2,54 @@
 
 @section('title', 'Settings')
 
+@php
+    $metaConnected = !empty($settings->facebook_page_access_token) && !empty($settings->facebook_page_id);
+    $youtubeConnected = !empty($settings->youtube_refresh_token) || !empty($settings->youtube_access_token);
+    $smsProvider = old('sms_provider', $settings->sms_provider ?? 'twilio');
+@endphp
+
+@include('settings.partials.styles')
+
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid settings-page">
     <div class="row mb-4">
         <div class="col-md-12">
-            <h2>Gym Settings</h2>
+            <h2 class="mb-1">Gym Settings</h2>
+            <p class="text-muted small mb-0 d-none d-lg-block">Settings are organized in sections below. Use the menu to jump to each block.</p>
+            <p class="text-muted small mb-0 d-lg-none">Tap a section at the top to jump. Swipe the menu if needed.</p>
+            @if(isset($gyms) && $gyms->isNotEmpty())
+                <form method="GET" action="{{ route('settings.index') }}" class="form-inline mt-2">
+                    <label for="settings_gym_id" class="mr-2 font-weight-bold">Gym:</label>
+                    <select name="gym_id" id="settings_gym_id" class="form-control form-control-sm" onchange="this.form.submit()">
+                        @foreach($gyms as $gym)
+                            <option value="{{ $gym->id }}" {{ (int)($settingsGymId ?? 0) === (int)$gym->id ? 'selected' : '' }}>{{ $gym->name }}</option>
+                        @endforeach
+                    </select>
+                </form>
+            @endif
         </div>
     </div>
 
-    <div id="alert-container"></div>
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show">{{ session('success') }}<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button></div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show">{{ session('error') }}<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button></div>
+    @endif
 
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card">
+    <form id="settings-form" method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data">
+        @csrf
+        @method('PUT')
+        @if(!empty($settingsGymId))<input type="hidden" name="gym_id" value="{{ $settingsGymId }}">@endif
+        <div class="row">
+        <div class="col-lg-3 mb-3 d-none d-lg-block">
+            @include('settings.partials.section-nav', ['variant' => 'desktop'])
+        </div>
+        <div class="col-lg-9">
+            @include('settings.partials.section-nav', ['variant' => 'mobile'])
+            <div class="card settings-section-card" id="section-profile">
+                <div class="card-header"><i class="fas fa-building text-primary"></i> Gym Profile</div>
                 <div class="card-body">
-                    <form id="settings-form" method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data">
-                        @csrf
-                        @method('PUT')
-
                         <div class="form-group">
                             <label for="gym_name">Gym Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('gym_name') is-invalid @enderror" id="gym_name" name="gym_name" value="{{ old('gym_name', $settings->gym_name ?? '') }}" required>
@@ -101,9 +131,12 @@
                             @enderror
                         </div>
 
-                        <hr>
-                        <h5>Features</h5>
+                    </div>
+                </div>
 
+                <div class="card settings-section-card" id="section-features">
+                    <div class="card-header"><i class="fas fa-toggle-on text-success"></i> Features & Email</div>
+                    <div class="card-body">
                         <div class="form-group">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="enable_online_booking" name="enable_online_booking" value="1" {{ old('enable_online_booking', $settings->enable_online_booking ?? false) ? 'checked' : '' }}>
@@ -131,6 +164,12 @@
                             </div>
                         </div>
 
+                    </div>
+                </div>
+
+                <div class="card settings-section-card" id="section-sms">
+                    <div class="card-header"><i class="fas fa-sms text-warning"></i> SMS Configuration</div>
+                    <div class="card-body">
                         <div class="form-group">
                             <label for="sms_provider">SMS Provider <span class="text-danger">*</span></label>
                             <select class="form-control @error('sms_provider') is-invalid @enderror" id="sms_provider" name="sms_provider" onchange="toggleSmsProviderFields()">
@@ -153,10 +192,10 @@
                                 <label for="twilio_account_sid">Twilio Account SID <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('twilio_account_sid') is-invalid @enderror" id="twilio_account_sid" name="twilio_account_sid" value="{{ old('twilio_account_sid', $settings->twilio_account_sid ?? '') }}" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
                                 <small class="form-text text-muted">
-                                    <strong>कसरी लिने (How to get):</strong><br>
-                                    1. <a href="https://www.twilio.com/try-twilio" target="_blank">Twilio.com</a> मा sign up गर्नुहोस् (Free $15.50 credit)<br>
-                                    2. Dashboard मा <strong>"Account SID"</strong> copy गर्नुहोस्<br>
-                                    3. यहाँ paste गर्नुहोस्
+                                    <strong>How to get:</strong><br>
+                                    1. Sign up at <a href="https://www.twilio.com/try-twilio" target="_blank">Twilio.com</a> (free trial credit available)<br>
+                                    2. Copy <strong>Account SID</strong> from the dashboard<br>
+                                    3. Paste it here
                                 </small>
                                 @error('twilio_account_sid')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -166,7 +205,7 @@
                             <div class="form-group">
                                 <label for="twilio_auth_token">Twilio Auth Token <span class="text-danger">*</span></label>
                                 <input type="password" class="form-control @error('twilio_auth_token') is-invalid @enderror" id="twilio_auth_token" name="twilio_auth_token" value="{{ old('twilio_auth_token', $settings->twilio_auth_token ?? '') }}" placeholder="Your Auth Token">
-                                <small class="form-text text-muted">Twilio Dashboard मा <strong>"Auth Token"</strong> (click to reveal)</small>
+                                <small class="form-text text-muted">In Twilio Dashboard, open <strong>Auth Token</strong> (click to reveal)</small>
                                 @error('twilio_auth_token')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -194,11 +233,11 @@
                                 <label for="sparrow_sms_token">Sparrow SMS Token <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('sparrow_sms_token') is-invalid @enderror" id="sparrow_sms_token" name="sparrow_sms_token" value="{{ old('sparrow_sms_token', $settings->sparrow_sms_token ?? '') }}" placeholder="Enter your Sparrow SMS Token">
                                 <small class="form-text text-muted">
-                                    <strong>कसरी लिने (How to get):</strong><br>
-                                    1. <a href="https://sparrowsms.com" target="_blank">SparrowSMS.com</a> मा sign up गर्नुहोस्<br>
-                                    2. Dashboard मा <strong>"API Token"</strong> copy गर्नुहोस्<br>
-                                    3. यहाँ paste गर्नुहोस्<br>
-                                    <span class="text-info"><i class="fas fa-info-circle"></i> Pricing: NPR 0.50-1.50 per SMS</span>
+                                    <strong>How to get:</strong><br>
+                                    1. Sign up at <a href="https://sparrowsms.com" target="_blank">SparrowSMS.com</a><br>
+                                    2. Copy <strong>API Token</strong> from the dashboard<br>
+                                    3. Paste it here<br>
+                                    <span class="text-info"><i class="fas fa-info-circle"></i> Pricing: NPR 0.50–1.50 per SMS</span>
                                 </small>
                                 @error('sparrow_sms_token')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -209,8 +248,8 @@
                                 <label for="sparrow_sms_from">Sparrow SMS From (Sender ID) <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('sparrow_sms_from') is-invalid @enderror" id="sparrow_sms_from" name="sparrow_sms_from" value="{{ old('sparrow_sms_from', $settings->sparrow_sms_from ?? 'SMS') }}" placeholder="SMS" maxlength="11">
                                 <small class="form-text text-muted">
-                                    <strong>Sender ID:</strong> Sparrow SMS मा register गरेको Sender ID (max 11 characters)<br>
-                                    <span class="text-info">Default: <strong>SMS</strong> (test को लागि)</span>
+                                    <strong>Sender ID:</strong> Your registered Sparrow SMS sender ID (max 11 characters)<br>
+                                    <span class="text-info">Default: <strong>SMS</strong> (for testing)</span>
                                 </small>
                                 @error('sparrow_sms_from')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -255,40 +294,15 @@
                             </div>
                         </div>
 
-                        <hr>
-                        <h5>Social Media API Credentials</h5>
-                        <p class="text-muted">Use these credentials for posting from Social Media module.</p>
+                    </div>
+                </div>
 
-                        <div class="form-group">
-                            <label for="facebook_page_id">Facebook Page ID</label>
-                            <input type="text" class="form-control" id="facebook_page_id" name="facebook_page_id" value="{{ old('facebook_page_id', $settings->facebook_page_id ?? '') }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="facebook_page_access_token">Facebook Page Access Token</label>
-                            <textarea class="form-control" id="facebook_page_access_token" name="facebook_page_access_token" rows="2">{{ old('facebook_page_access_token', $settings->facebook_page_access_token ?? '') }}</textarea>
-                        </div>
-                        <div class="form-group">
-                            <button type="button" class="btn btn-outline-info btn-sm" id="test-facebook-btn">
-                                Test Facebook Connection
-                            </button>
-                            <small id="test-facebook-result" class="form-text"></small>
-                        </div>
-                        <div class="form-group">
-                            <label for="instagram_business_account_id">Instagram Business Account ID</label>
-                            <input type="text" class="form-control" id="instagram_business_account_id" name="instagram_business_account_id" value="{{ old('instagram_business_account_id', $settings->instagram_business_account_id ?? '') }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="youtube_channel_id">YouTube Channel ID</label>
-                            <input type="text" class="form-control" id="youtube_channel_id" name="youtube_channel_id" value="{{ old('youtube_channel_id', $settings->youtube_channel_id ?? '') }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="youtube_access_token">YouTube Access Token</label>
-                            <textarea class="form-control" id="youtube_access_token" name="youtube_access_token" rows="2">{{ old('youtube_access_token', $settings->youtube_access_token ?? '') }}</textarea>
-                        </div>
+                @include('settings.partials.section-meta')
+                @include('settings.partials.section-youtube')
 
-                        <hr>
-                        <h5>Membership Pause Feature</h5>
-
+                <div class="card settings-section-card" id="section-pause">
+                    <div class="card-header"><i class="fas fa-pause-circle text-secondary"></i> Membership Pause</div>
+                    <div class="card-body">
                         <div class="form-group">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="enable_pause_feature" name="enable_pause_feature" value="1" {{ old('enable_pause_feature', $settings->enable_pause_feature ?? false) ? 'checked' : '' }}>
@@ -308,83 +322,18 @@
                             <small class="form-text text-muted">Minimum number of days required for a pause request</small>
                         </div>
 
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Update Settings</button>
-                        </div>
-                    </form>
+                    </div>
+                </div>
+
+                <div class="settings-save-bar d-flex flex-wrap align-items-center justify-content-between">
+                    <span class="text-muted small mb-2 mb-md-0">All sections are saved together when you click Update.</span>
+                    <button type="submit" class="btn btn-primary btn-lg mb-0"><i class="fas fa-save mr-1"></i> Update Settings</button>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 </div>
-@push('scripts')
-<script>
-function toggleSmsProviderFields() {
-    var provider = document.getElementById('sms_provider').value;
-    var twilioSettings = document.getElementById('twilio_settings');
-    var sparrowSettings = document.getElementById('sparrow_settings');
-    var textlocalSettings = document.getElementById('textlocal_settings');
-    
-    // Hide all first
-    twilioSettings.style.display = 'none';
-    sparrowSettings.style.display = 'none';
-    textlocalSettings.style.display = 'none';
-    
-    // Show selected provider
-    if (provider === 'twilio') {
-        twilioSettings.style.display = 'block';
-    } else if (provider === 'sparrow') {
-        sparrowSettings.style.display = 'block';
-    } else if (provider === 'textlocal') {
-        textlocalSettings.style.display = 'block';
-    }
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    toggleSmsProviderFields();
-
-    const testBtn = document.getElementById('test-facebook-btn');
-    if (testBtn) {
-        testBtn.addEventListener('click', function() {
-            const pageId = document.getElementById('facebook_page_id').value;
-            const token = document.getElementById('facebook_page_access_token').value;
-            const resultEl = document.getElementById('test-facebook-result');
-
-            resultEl.className = 'form-text text-muted';
-            resultEl.textContent = 'Testing...';
-
-            fetch('{{ route("settings.test-facebook") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    facebook_page_id: pageId,
-                    facebook_page_access_token: token
-                })
-            })
-            .then(async (response) => {
-                const payload = await response.json();
-                if (payload.success) {
-                    resultEl.className = 'form-text text-success';
-                    resultEl.textContent = payload.message + ' Page: ' + (payload.data?.name || 'N/A');
-                } else {
-                    resultEl.className = 'form-text text-danger';
-                    resultEl.textContent = payload.message || 'Facebook test failed.';
-                }
-            })
-            .catch(() => {
-                resultEl.className = 'form-text text-danger';
-                resultEl.textContent = 'Unable to test Facebook connection right now.';
-            });
-        });
-    }
-});
-</script>
-@endpush
+@include('settings.partials.scripts')
 
 @endsection
 

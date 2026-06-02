@@ -31,4 +31,8 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'meta' => [
+        'redirect_uri' => env('META_OAUTH_REDIRECT_URI'),
+    ],
+
 ];

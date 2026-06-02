@@ -5,9 +5,131 @@
 
 @push('styles')
 <style>
+    .dashboard-card {
+        border: 0;
+        border-radius: 1rem;
+        box-shadow: 0 0.35rem 1.5rem rgba(58, 59, 69, 0.12);
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.75rem 2rem rgba(58, 59, 69, 0.18);
+    }
+
+    .stat-card {
+        min-height: 138px;
+        position: relative;
+    }
+
+    .stat-card .card-body,
+    .finance-card .card-body {
+        display: flex;
+        align-items: center;
+    }
+
+    .stat-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0.08;
+        pointer-events: none;
+    }
+
+    .stat-card.members::before {
+        background: linear-gradient(135deg, #4e73df, transparent 65%);
+    }
+
+    .stat-card.trainers::before {
+        background: linear-gradient(135deg, #36b9cc, transparent 65%);
+    }
+
+    .stat-card.classes::before,
+    .stat-card.income::before {
+        background: linear-gradient(135deg, #1cc88a, transparent 65%);
+    }
+
     .stat-icon {
-        font-size: 2.5rem;
-        opacity: 0.4;
+        align-items: center;
+        border-radius: 50%;
+        display: inline-flex;
+        font-size: 1.8rem;
+        height: 58px;
+        justify-content: center;
+        opacity: 1;
+        width: 58px;
+    }
+
+    .stat-icon.text-primary {
+        background: rgba(78, 115, 223, 0.12);
+    }
+
+    .stat-icon.text-info {
+        background: rgba(54, 185, 204, 0.12);
+    }
+
+    .stat-icon.text-success {
+        background: rgba(28, 200, 138, 0.12);
+    }
+
+    .stat-value {
+        font-size: 1.65rem;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+    }
+
+    .finance-card {
+        min-height: 150px;
+    }
+
+    .dashboard-card .card-header {
+        background: #fff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .dashboard-table-card {
+        min-height: 330px;
+    }
+
+    .dashboard-chart-card {
+        min-height: 390px;
+    }
+
+    .dashboard-chart-card .chart-area {
+        height: 275px;
+        min-height: 275px;
+        max-height: 275px;
+        position: relative;
+    }
+
+    .dashboard-chart-card .chart-area canvas {
+        height: 275px !important;
+        max-height: 275px !important;
+        width: 100% !important;
+    }
+
+    .dashboard-table-card .table {
+        margin-bottom: 0;
+    }
+
+    .dashboard-table-card th {
+        border-top: 0;
+        color: #858796;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    @media (max-width: 575.98px) {
+        .stat-card,
+        .finance-card {
+            min-height: 120px;
+        }
+
+        .stat-value {
+            font-size: 1.35rem;
+        }
     }
 </style>
 @endpush
@@ -16,12 +138,12 @@
 <div class="row">
     <!-- Stats -->
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-0 shadow h-100 py-2 stat-card members">
+        <div class="card dashboard-card h-100 py-2 stat-card members">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Members</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalMembers }}</div>
+                        <div class="stat-value mb-0 font-weight-bold text-gray-800">{{ $totalMembers }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-users text-primary stat-icon"></i>
@@ -32,12 +154,12 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-0 shadow h-100 py-2 stat-card trainers">
+        <div class="card dashboard-card h-100 py-2 stat-card trainers">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Trainers</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalTrainers }}</div>
+                        <div class="stat-value mb-0 font-weight-bold text-gray-800">{{ $totalTrainers }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-user-tie text-info stat-icon"></i>
@@ -48,12 +170,12 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-0 shadow h-100 py-2 stat-card classes">
+        <div class="card dashboard-card h-100 py-2 stat-card classes">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Classes</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeClasses }}</div>
+                        <div class="stat-value mb-0 font-weight-bold text-gray-800">{{ $activeClasses }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-dumbbell text-success stat-icon"></i>
@@ -64,12 +186,12 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-0 shadow h-100 py-2 stat-card income">
+        <div class="card dashboard-card h-100 py-2 stat-card income">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Monthly Income</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ number_format($monthlyIncome ?? 0, 2) }}</div>
+                        <div class="stat-value mb-0 font-weight-bold text-gray-800">${{ number_format($monthlyIncome ?? 0, 2) }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-arrow-up text-success stat-icon"></i>
@@ -83,7 +205,7 @@
 <!-- Financial Summary Row -->
 <div class="row">
     <div class="col-xl-4 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
+        <div class="card dashboard-card border-left-success finance-card h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
@@ -100,7 +222,7 @@
     </div>
 
     <div class="col-xl-4 col-md-6 mb-4">
-        <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card dashboard-card border-left-danger finance-card h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
@@ -117,7 +239,7 @@
     </div>
 
     <div class="col-xl-4 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
+        <div class="card dashboard-card border-left-info finance-card h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
@@ -138,8 +260,8 @@
 
 <div class="row">
     <!-- Financial Chart (Income vs Expenses) -->
-    <div class="col-xl-8 col-lg-7">
-        <div class="card shadow mb-4">
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card dashboard-card dashboard-chart-card h-100">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-primary">Financial Overview (Last 7 Days)</h6>
             </div>
@@ -152,8 +274,8 @@
     </div>
 
     <!-- Monthly Trend Chart -->
-    <div class="col-xl-4 col-lg-5">
-        <div class="card shadow mb-4">
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card dashboard-card dashboard-chart-card h-100">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Monthly Trend (Last 12 Months)</h6>
             </div>
@@ -168,8 +290,8 @@
 
 <div class="row">
     <!-- Recent Income (Payments) -->
-    <div class="col-xl-6 col-lg-6">
-        <div class="card shadow mb-4">
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card dashboard-card dashboard-table-card h-100">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-success">Recent Income (Payments)</h6>
                 <a href="{{ route('payments.index') }}" class="btn btn-sm btn-success">View All</a>
@@ -204,8 +326,8 @@
     </div>
 
     <!-- Recent Expenses (Salary Payments) -->
-    <div class="col-xl-6 col-lg-6">
-        <div class="card shadow mb-4">
+    <div class="col-xl-6 col-lg-6 mb-4">
+        <div class="card dashboard-card dashboard-table-card h-100">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-danger">Recent Expenses (Salary Payments)</h6>
                 <a href="{{ route('salary-payments.index') }}" class="btn btn-sm btn-danger">View All</a>
@@ -242,8 +364,8 @@
 
 <div class="row">
     <!-- Attendance Chart -->
-    <div class="col-xl-8 col-lg-7">
-        <div class="card shadow mb-4">
+    <div class="col-xl-8 col-lg-7 mb-4">
+        <div class="card dashboard-card dashboard-chart-card h-100">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-primary">Attendance (Last 7 Days)</h6>
             </div>
@@ -259,7 +381,7 @@
 <div class="row">
     <!-- Upcoming Classes -->
     <div class="col-12">
-        <div class="card shadow mb-4">
+        <div class="card dashboard-card mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Upcoming Classes</h6>
             </div>
